@@ -1,3 +1,49 @@
+<?php
+session_start();
+if ($_SESSION['role'] != 'dosen') {
+    header("Location: login.php");
+    exit();
+}
+include 'config.php';
+
+$dosen_id = $_SESSION['id'];
+$sql = "SELECT * FROM jadwal WHERE dosen_id='$dosen_id'";
+$result = $conn->query($sql);
+?>
+
+<?php
+include 'config.php';
+
+// Periksa apakah pengguna adalah dosen
+if ($_SESSION['role'] != 'dosen') {
+    header("Location: login.php");
+    exit();
+}
+
+$dosen_user_id = $_SESSION['user_id'];
+
+// Query untuk mendapatkan data mata kuliah yang diampu oleh dosen
+$sql = "
+SELECT u.id as user_id, u.username, u.name, mk.id as mata_kuliah_id, mk.nama_mata_kuliah 
+FROM users u 
+JOIN mata_kuliah mk ON u.id = mk.dosen_id 
+WHERE u.id = '$dosen_user_id'
+";
+$hasil = $conn->query($sql);
+
+if (!$hasil) {
+    die('Query Error: ' . $conn->error);
+}
+
+// Ambil nama dosen
+$dosen_name = '';
+if ($row = $hasil->fetch_assoc()) {
+    $dosen_name = $row['name'];
+    // Reset pointer hasil set to use it in the table display
+    $hasil->data_seek(0);
+}
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -46,7 +92,7 @@
         <div class="sidebar pe-4 pb-3">
             <nav class="navbar bg-secondary navbar-dark">
                 <a href="index.html" class="navbar-brand mx-4 mb-3">
-                    <h3 class="text-primary"><i class="fa fa-user-edit me-2"></i>DarkPan</h3>
+                    <h3 class="text-primary"><i class="fa fa-user-edit me-2"></i>UNIGA</h3>
                 </a>
                 <div class="d-flex align-items-center ms-4 mb-4">
                     <div class="position-relative">
@@ -54,33 +100,14 @@
                         <div class="bg-success rounded-circle border border-2 border-white position-absolute end-0 bottom-0 p-1"></div>
                     </div>
                     <div class="ms-3">
-                        <h6 class="mb-0">Jhon Doe</h6>
-                        <span>Admin</span>
+                        <h5 class="mb-0"><?= $_SESSION['name'] ?></h5>
+                        <span class="small"><?php echo htmlspecialchars($row['nama_mata_kuliah']); ?></span>
                     </div>
                 </div>
                 <div class="navbar-nav w-100">
-                    <a href="index.html" class="nav-item nav-link"><i class="fa fa-tachometer-alt me-2"></i>Dashboard</a>
-                    <div class="nav-item dropdown">
-                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown"><i class="fa fa-laptop me-2"></i>Elements</a>
-                        <div class="dropdown-menu bg-transparent border-0">
-                            <a href="button.html" class="dropdown-item">Buttons</a>
-                            <a href="typography.html" class="dropdown-item">Typography</a>
-                            <a href="element.html" class="dropdown-item">Other Elements</a>
-                        </div>
-                    </div>
-                    <a href="widget.html" class="nav-item nav-link"><i class="fa fa-th me-2"></i>Widgets</a>
-                    <a href="form.html" class="nav-item nav-link"><i class="fa fa-keyboard me-2"></i>Forms</a>
-                    <a href="table.html" class="nav-item nav-link"><i class="fa fa-table me-2"></i>Tables</a>
-                    <a href="chart.html" class="nav-item nav-link active"><i class="fa fa-chart-bar me-2"></i>Charts</a>
-                    <div class="nav-item dropdown">
-                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown"><i class="far fa-file-alt me-2"></i>Pages</a>
-                        <div class="dropdown-menu bg-transparent border-0">
-                            <a href="signin.html" class="dropdown-item">Sign In</a>
-                            <a href="signup.html" class="dropdown-item">Sign Up</a>
-                            <a href="404.html" class="dropdown-item">404 Error</a>
-                            <a href="blank.html" class="dropdown-item">Blank Page</a>
-                        </div>
-                    </div>
+                    <a href="input_absensi.php" class="nav-item nav-link"><i class="fa fa-th me-2"></i>Absensi</a>
+                    <a href="dosen_dashboard.php" class="nav-item nav-link active"><i class="fa fa-tachometer-alt me-2"></i>Dashboard</a>
+                    <a href="logout.php" class="nav-item nav-link"><i class="fa fa-chart-bar me-2"></i>Logout</a>
                 </div>
             </nav>
         </div>
@@ -167,65 +194,81 @@
                     <div class="nav-item dropdown">
                         <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
                             <img class="rounded-circle me-lg-2" src="img/user.jpg" alt="" style="width: 40px; height: 40px;">
-                            <span class="d-none d-lg-inline-flex">John Doe</span>
+                            <span class="d-none d-lg-inline-flex"><?= $_SESSION['name'] ?></span>
                         </a>
                         <div class="dropdown-menu dropdown-menu-end bg-secondary border-0 rounded-0 rounded-bottom m-0">
                             <a href="#" class="dropdown-item">My Profile</a>
                             <a href="#" class="dropdown-item">Settings</a>
-                            <a href="#" class="dropdown-item">Log Out</a>
+                            <a href="logout.php" class="dropdown-item">Log Out</a>
                         </div>
                     </div>
                 </div>
             </nav>
             <!-- Navbar End -->
+            <!-- Tabel Absensi -->
+            <div class="container-fluid pt-4 px-4">
+                <div class="bg-secondary text-center rounded p-4">
+                    <div class="d-flex align-items-center justify-content-between mb-4">
+                        <h6 class="mb-0">Jadwal</h6>
+                        <a href="">Show All</a>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table text-start align-middle table-bordered table-hover mb-0">
+                            <thead>
+                <tr>
+                    <th>Mata Kuliah</th>
+                    <th>Hari</th>
+                    <th>Jam</th>
+                    <th>SKS</th>
+                    <th>Nama Dosen</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php while($row = $result->fetch_assoc()): ?>
+                    <tr>
+                        <td><?= $row['mata_kuliah'] ?></td>
+                        <td><?= $row['hari'] ?></td>
+                        <td><?= $row['jam'] ?></td>
+                        <td><?= $row['sks'] ?></td>
+                        <td>
+                            <?php
+                            $dosen_sql = "SELECT name FROM users WHERE id='{$row['dosen_id']}'";
+                            $dosen_result = $conn->query($dosen_sql);
+                            if ($dosen_result->num_rows > 0) {
+                                $dosen = $dosen_result->fetch_assoc();
+                                echo $dosen['name'];
+                            }
+                            ?>
+                        </td>
+                    </tr>
+                <?php endwhile; ?>
+            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <!-- Recent Sales End -->
 
 
-            <!-- Chart Start -->
+            <!-- Widgets Start -->
             <div class="container-fluid pt-4 px-4">
                 <div class="row g-4">
-                    <div class="col-sm-12 col-xl-6">
-                        <div class="bg-secondary rounded h-100 p-4">
-                            <h6 class="mb-4">Single Line Chart</h6>
-                            <canvas id="line-chart"></canvas>
-                        </div>
-                    </div>
-                    <div class="col-sm-12 col-xl-6">
-                        <div class="bg-secondary rounded h-100 p-4">
-                            <h6 class="mb-4">Multiple Line Chart</h6>
-                            <canvas id="salse-revenue"></canvas>
-                        </div>
-                    </div>
-                    <div class="col-sm-12 col-xl-6">
-                        <div class="bg-secondary rounded h-100 p-4">
-                            <h6 class="mb-4">Single Bar Chart</h6>
-                            <canvas id="bar-chart"></canvas>
-                        </div>
-                    </div>
-                    <div class="col-sm-12 col-xl-6">
-                        <div class="bg-secondary rounded h-100 p-4">
-                            <h6 class="mb-4">Multiple Bar Chart</h6>
-                            <canvas id="worldwide-sales"></canvas>
-                        </div>
-                    </div>
-                    <div class="col-sm-12 col-xl-6">
-                        <div class="bg-secondary rounded h-100 p-4">
-                            <h6 class="mb-4">Pie Chart</h6>
-                            <canvas id="pie-chart"></canvas>
-                        </div>
-                    </div>
-                    <div class="col-sm-12 col-xl-6">
-                        <div class="bg-secondary rounded h-100 p-4">
-                            <h6 class="mb-4">Doughnut Chart</h6>
-                            <canvas id="doughnut-chart"></canvas>
+                    <div class="col-sm-12 col-md-6 col-xl-4">
+                        <div class="h-100 bg-secondary rounded p-4">
+                            <div class="d-flex align-items-center justify-content-between mb-4">
+                                <h6 class="mb-0">Calender</h6>
+                                <a href="">Show All</a>
+                            </div>
+                            <div id="calender"></div>
                         </div>
                     </div>
                 </div>
             </div>
-            <!-- Chart End -->
+            <!-- Widgets End -->
 
 
             <!-- Footer Start -->
-            <div class="container-fluid pt-4 px-4">
+            <div class="container-fluid pt-4 px-4" style="margin-top: 260px">
                 <div class="bg-secondary rounded-top p-4">
                     <div class="row">
                         <div class="col-12 col-sm-6 text-center text-sm-start">

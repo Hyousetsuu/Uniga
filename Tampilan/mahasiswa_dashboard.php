@@ -1,3 +1,47 @@
+<?php
+session_start();
+include 'config.php';
+
+// Periksa apakah pengguna adalah mahasiswa
+if ($_SESSION['role'] != 'mahasiswa') {
+    header("Location: login.php");
+    exit();
+}
+
+$mahasiswa_user_id = $_SESSION['user_id'];
+
+// Query untuk mendapatkan data absensi mahasiswa
+$sql = "
+SELECT a.*, j.mata_kuliah, j.hari, j.jam, j.jam_selesai, j.sks, u1.name as dosen_name, u2.name as mahasiswa_name 
+FROM absensi a 
+JOIN jadwal j ON a.jadwal_id = j.id 
+JOIN users u1 ON j.dosen_id = u1.id 
+JOIN mahasiswa m ON a.mahasiswa_id = m.id
+JOIN users u2 ON m.user_id = u2.id
+WHERE u2.id = '$mahasiswa_user_id'
+";
+$result = $conn->query($sql);
+
+if (!$result) {
+    die('Query Error: ' . $conn->error);
+}
+
+// Ambil nama mahasiswa
+$mahasiswa_name = '';
+if ($row = $result->fetch_assoc()) {
+    $mahasiswa_name = $row['mahasiswa_name'];
+    // Reset pointer result set to use it in the table display
+    $result->data_seek(0);
+}
+?>
+
+<?php
+if ($_SESSION['role'] != 'mahasiswa') {
+    header("Location: login.php");
+    exit();
+}
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -46,7 +90,7 @@
         <div class="sidebar pe-4 pb-3">
             <nav class="navbar bg-secondary navbar-dark">
                 <a href="index.html" class="navbar-brand mx-4 mb-3">
-                    <h3 class="text-primary"><i class="fa fa-user-edit me-2"></i>DarkPan</h3>
+                    <h3 class="text-primary"><i class="fa fa-user-edit me-2"></i>UNIGA</h3>
                 </a>
                 <div class="d-flex align-items-center ms-4 mb-4">
                     <div class="position-relative">
@@ -54,33 +98,14 @@
                         <div class="bg-success rounded-circle border border-2 border-white position-absolute end-0 bottom-0 p-1"></div>
                     </div>
                     <div class="ms-3">
-                        <h6 class="mb-0">Jhon Doe</h6>
-                        <span>Admin</span>
+                        <h5 class="mb-0"><?= $_SESSION['name'] ?></h5>
+                        <span class="small"><?= $_SESSION['jurusan'] ?></span>
                     </div>
                 </div>
                 <div class="navbar-nav w-100">
-                    <a href="index.html" class="nav-item nav-link"><i class="fa fa-tachometer-alt me-2"></i>Dashboard</a>
-                    <div class="nav-item dropdown">
-                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown"><i class="fa fa-laptop me-2"></i>Elements</a>
-                        <div class="dropdown-menu bg-transparent border-0">
-                            <a href="button.html" class="dropdown-item">Buttons</a>
-                            <a href="typography.html" class="dropdown-item">Typography</a>
-                            <a href="element.html" class="dropdown-item">Other Elements</a>
-                        </div>
-                    </div>
-                    <a href="widget.html" class="nav-item nav-link"><i class="fa fa-th me-2"></i>Widgets</a>
-                    <a href="form.html" class="nav-item nav-link"><i class="fa fa-keyboard me-2"></i>Forms</a>
-                    <a href="table.html" class="nav-item nav-link"><i class="fa fa-table me-2"></i>Tables</a>
-                    <a href="chart.html" class="nav-item nav-link"><i class="fa fa-chart-bar me-2"></i>Charts</a>
-                    <div class="nav-item dropdown">
-                        <a href="#" class="nav-link dropdown-toggle active" data-bs-toggle="dropdown"><i class="far fa-file-alt me-2"></i>Pages</a>
-                        <div class="dropdown-menu bg-transparent border-0">
-                            <a href="signin.html" class="dropdown-item">Sign In</a>
-                            <a href="signup.html" class="dropdown-item">Sign Up</a>
-                            <a href="404.html" class="dropdown-item active">404 Error</a>
-                            <a href="blank.html" class="dropdown-item">Blank Page</a>
-                        </div>
-                    </div>
+                    <a href="view_jadwal_mahasiswa.php" class="nav-item nav-link"><i class="fa fa-th me-2"></i>Jadwal</a>
+                    <a href="mahasiswa_dashboard.php" class="nav-item nav-link active"><i class="fa fa-tachometer-alt me-2"></i>Dashboard</a>
+                    <a href="logout.php" class="nav-item nav-link"><i class="fa fa-chart-bar me-2"></i>Logout</a>
                 </div>
             </nav>
         </div>
@@ -167,37 +192,76 @@
                     <div class="nav-item dropdown">
                         <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
                             <img class="rounded-circle me-lg-2" src="img/user.jpg" alt="" style="width: 40px; height: 40px;">
-                            <span class="d-none d-lg-inline-flex">John Doe</span>
+                            <span class="d-none d-lg-inline-flex"><?= $_SESSION['name'] ?></span>
                         </a>
                         <div class="dropdown-menu dropdown-menu-end bg-secondary border-0 rounded-0 rounded-bottom m-0">
                             <a href="#" class="dropdown-item">My Profile</a>
                             <a href="#" class="dropdown-item">Settings</a>
-                            <a href="#" class="dropdown-item">Log Out</a>
+                            <a href="logout.php" class="dropdown-item">Log Out</a>
                         </div>
                     </div>
                 </div>
             </nav>
             <!-- Navbar End -->
-
-
-            <!-- 404 Start -->
+            <!-- Tabel Absensi -->
             <div class="container-fluid pt-4 px-4">
-                <div class="row vh-100 bg-secondary rounded align-items-center justify-content-center mx-0">
-                    <div class="col-md-6 text-center p-4">
-                        <i class="bi bi-exclamation-triangle display-1 text-primary"></i>
-                        <h1 class="display-1 fw-bold">404</h1>
-                        <h1 class="mb-4">Page Not Found</h1>
-                        <p class="mb-4">We’re sorry, the page you have looked for does not exist in our website!
-                            Maybe go to our home page or try to use a search?</p>
-                        <a class="btn btn-primary rounded-pill py-3 px-5" href="">Go Back To Home</a>
+                <div class="bg-secondary text-center rounded p-4">
+                    <div class="d-flex align-items-center justify-content-between mb-4">
+                        <h6 class="mb-0">Absensi</h6>
+                        <a href="">Show All</a>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table text-start align-middle table-bordered table-hover mb-0">
+                            <thead>
+                                <tr class="text-white">
+                                    <th scope="col">Mata Kuliah</th>
+                                    <th scope="col">Hari</th>
+                                    <th scope="col">Jam Mulai</th>
+                                    <th scope="col">Jam Selesai</th>
+                                    <th scope="col">SKS</th>
+                                    <th scope="col">Nama Dosen</th>
+                                    <th scope="col">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php while ($row = $result->fetch_assoc()): ?>
+                <tr>
+                    <td><?php echo $row['mata_kuliah']; ?></td>
+                    <td><?php echo $row['hari']; ?></td>
+                    <td><?php echo $row['jam']; ?></td>
+                    <td><?php echo $row['jam_selesai']; ?></td>
+                    <td><?php echo $row['sks']; ?></td>
+                    <td><?php echo $row['dosen_name']; ?></td>
+                    <td><?php echo $row['status']; ?></td>
+                </tr>
+                <?php endwhile; ?>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
-            <!-- 404 End -->
+            <!-- Recent Sales End -->
+
+
+            <!-- Widgets Start -->
+            <div class="container-fluid pt-4 px-4">
+                <div class="row g-4">
+                    <div class="col-sm-12 col-md-6 col-xl-4">
+                        <div class="h-100 bg-secondary rounded p-4">
+                            <div class="d-flex align-items-center justify-content-between mb-4">
+                                <h6 class="mb-0">Calender</h6>
+                                <a href="">Show All</a>
+                            </div>
+                            <div id="calender"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Widgets End -->
 
 
             <!-- Footer Start -->
-            <div class="container-fluid pt-4 px-4">
+            <div class="container-fluid pt-4 px-4" style="margin-top: 260px">
                 <div class="bg-secondary rounded-top p-4">
                     <div class="row">
                         <div class="col-12 col-sm-6 text-center text-sm-start">
