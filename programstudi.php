@@ -1,3 +1,28 @@
+<?php
+    session_start();
+
+    ini_set('display_errors', 1);
+    ini_set('display_startup_errors', 1);
+    error_reporting(E_ALL);
+
+    if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
+     header('Location: login.php');
+     exit();
+    }
+
+    include('koneksi.php');
+
+    $user_id = $_SESSION['user_id'];
+    $role = $_SESSION['role'];
+
+    $stmt = $conn->prepare("SELECT nama, profile_pic FROM login WHERE id = ?");
+    $stmt->bind_param('i', $user_id);
+    $stmt->execute();
+    $stmt->bind_result($nama, $profile_pic);
+    $stmt->fetch();
+    $stmt->close();
+
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -17,7 +42,7 @@
             <li><a href="fakulltas.php"><i class="fas fa-building"></i> Fakultas</a></li>
             <li><a href="programstudi.php" class="active"><i class="fas fa-graduation-cap"></i> Program Studi</a></li>
             <li><a href="matakuliah.php"><i class="fas fa-book"></i> Mata Kuliah</a></li>
-            <li><a href="dosen.php"><i class="fas fa-chalkboard-teacher"></i> Dosen</a></li>
+            <li><a href="dosen.php"><i class="fas fa-chalkboard-teacher"></i> Daftar Dosen</a></li>
             <li><a href="mahasiswa.php"><i class="fas fa-user-graduate"></i> Mahasiswa</a></li>
             <li><a href="logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
         </ul>
@@ -26,10 +51,10 @@
         <header>
         <button id="sidebar-toggle"><i class="fas fa-bars"></i></button>
             <div class="user-wrapper">
-                <img src="anime-girl-horn-katana-fantasy-4k-wallpaper-uhdpaper.com-726@0@j.jpg" alt="User" width="30" height="30">
+                <img src="<?php echo $profile_pic ? $profile_pic : 'default-profile.png'; ?>" alt="User" width="30" height="30">
                 <div>
-                    <h4>Admin</h4>
-                    <small>Connected</small>
+                    <h4><?php echo $nama; ?></h4>
+                    <small><?php echo ucfirst($role); ?></small>
                 </div>
             </div>
         </header>
@@ -48,7 +73,6 @@
                     </thead>
                     <tbody>
                         <?php
-                        session_start();
 
                         // Enable error reporting
                         ini_set('display_errors', 1);
@@ -62,7 +86,6 @@
                         }
                         // Koneksi ke database
                         include("koneksi.php");
-
                         // Ambil data program studi beserta nama fakultas
                         $sql = "SELECT program_studi.id, program_studi.nama_program_studi, fakultas.nama_fakultas 
                                 FROM program_studi 
@@ -94,7 +117,6 @@
                         } else {
                             echo "<tr><td colspan='4'>Tidak ada data</td></tr>";
                         }
-
                         $conn->close();
                         ?>
                     </tbody>

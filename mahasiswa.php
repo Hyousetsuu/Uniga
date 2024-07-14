@@ -1,5 +1,27 @@
 <?php
 session_start();
+
+    ini_set('display_errors', 1);
+    ini_set('display_startup_errors', 1);
+    error_reporting(E_ALL);
+
+    if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
+     header('Location: login.php');
+     exit();
+    }
+
+    include('koneksi.php');
+
+    $user_id = $_SESSION['user_id'];
+    $role = $_SESSION['role'];
+
+    $stmt = $conn->prepare("SELECT nama, profile_pic FROM login WHERE id = ?");
+    $stmt->bind_param('i', $user_id);
+    $stmt->execute();
+    $stmt->bind_result($nama, $profile_pic);
+    $stmt->fetch();
+    $stmt->close();
+
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
@@ -53,10 +75,10 @@ $result_program_studi = $conn->query($sql_program_studi);
         <header>
         <button id="sidebar-toggle"><i class="fas fa-bars"></i></button>
             <div class="user-wrapper">
-                <img src="user.png" alt="User" width="30" height="30">
+                <img src="<?php echo $profile_pic ? $profile_pic : 'default-profile.png'; ?>" alt="User" width="30" height="30">
                 <div>
-                    <h4>Admin</h4>
-                    <small>Connected</small>
+                    <h4><?php echo $nama; ?></h4>
+                    <small><?php echo ucfirst($role); ?></small>
                 </div>
             </div>
         </header>

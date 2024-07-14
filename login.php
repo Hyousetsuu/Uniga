@@ -10,8 +10,8 @@
     <div class="container">
         <div class="heading">Login</div>
         <form action="login.php" method="post" class="form">
-            <input required="" class="input" type="email" name="email" id="email" placeholder="E-mail">
-            <input required="" class="input" type="password" name="password" id="password" placeholder="Password">
+            <input required class="input" type="email" name="email" id="email" placeholder="E-mail">
+            <input required class="input" type="password" name="password" id="password" placeholder="Password">
             <input class="login-button" type="submit" name="login" value="Login">
         </form>
     </div>
@@ -43,35 +43,27 @@ function closeAlert(button) {
 </html>
 
 <?php
-// Proses Login
-include('koneksi.php');
 session_start();
+include('koneksi.php');
 
 if (isset($_POST['login'])) {
-    // Mendapatkan nilai email dan password dari form login
     $email = trim($_POST['email']);
     $password = trim($_POST['password']);
 
-    // Validasi input
     if (!empty($email) && !empty($password)) {
-        // Membuat query SQL untuk mendapatkan pengguna berdasarkan email
         $stmt = $conn->prepare("SELECT id, password, role FROM login WHERE email = ?");
         $stmt->bind_param("s", $email);
         $stmt->execute();
         $stmt->store_result();
 
-        // Jika pengguna ditemukan
         if ($stmt->num_rows > 0) {
             $stmt->bind_result($user_id, $db_password, $db_role);
             $stmt->fetch();
 
-            // Verifikasi password
             if (password_verify($password, $db_password)) {
-                // Set session variables
-                $_SESSION['email'] = $email;
+                $_SESSION['user_id'] = $user_id;
                 $_SESSION['role'] = $db_role;
 
-                // Insert login history into database
                 $login_time = date('Y-m-d H:i:s');
                 $ip_address = $_SERVER['REMOTE_ADDR'];
                 $page_accessed = 'dashboard.php';
@@ -81,7 +73,6 @@ if (isset($_POST['login'])) {
                 $stmt_insert->execute();
                 $stmt_insert->close();
 
-                // Redirect based on role
                 if ($db_role === 'admin') {
                     echo '<script>showAlert("Login successful. Redirecting to admin dashboard.", "success"); setTimeout(function() { window.location.href = "dashboard.php"; }, 2000);</script>';
                 } else {

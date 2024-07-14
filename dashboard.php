@@ -1,6 +1,19 @@
 <?php
 session_start();
 
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
+    header('Location: login.php');
+    exit();
+}
+
+include('koneksi.php');
+
+$user_id = $_SESSION['user_id'];
+
 // Enable error reporting
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
@@ -11,7 +24,7 @@ if (!isset($_SESSION['email']) || $_SESSION['role'] !== 'admin') {
     header('Location: login.php');
     exit();
 }
-
+$role = $_SESSION['role'];
 // Sambungkan ke database
 include('koneksi.php');
 
@@ -50,8 +63,16 @@ $stmt_fakultas->bind_result($total_fakultas);
 $stmt_fakultas->fetch();
 $stmt_fakultas->close();
 
-// Tutup koneksi ke database
+$stmt = $conn->prepare("SELECT nama, profile_pic FROM login WHERE id = ?");
+$stmt->bind_param('i', $user_id);
+$stmt->execute();
+$stmt->bind_result($nama, $profile_pic);
+$stmt->fetch();
+$stmt->close();
 $conn->close();
+
+
+// Tutup koneksi ke database
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -72,7 +93,7 @@ $conn->close();
             <li><a href="fakulltas.php"><i class="fas fa-building"></i> Fakultas</a></li>
             <li><a href="programstudi.php"><i class="fas fa-graduation-cap"></i> Program Studi</a></li>
             <li><a href="matakuliah.php"><i class="fas fa-book"></i> Mata Kuliah</a></li>
-            <li><a href="dosen.php"><i class="fas fa-chalkboard-teacher"></i> Dosen</a></li>
+            <li><a href="dosen.php"><i class="fas fa-chalkboard-teacher"></i> Daftar Dosen</a></li>
             <li><a href="mahasiswa.php"><i class="fas fa-user-graduate"></i> Mahasiswa</a></li>
             <li><a href="logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
         </ul>
@@ -81,10 +102,10 @@ $conn->close();
         <header>
         <button id="sidebar-toggle"><i class="fas fa-bars"></i></button>
             <div class="user-wrapper">
-                <img src="anime-girl-horn-katana-fantasy-4k-wallpaper-uhdpaper.com-726@0@j.jpg" alt="User" width="30" height="30">
+                <img src="<?php echo $profile_pic ? $profile_pic : 'default-profile.png'; ?>" alt="User" width="30" height="30">
                 <div>
-                    <h4>Admin</h4>
-                    <small>Connected</small>
+                    <h4><?php echo $nama; ?></h4>
+                    <small><?php echo ucfirst($role); ?></small>
                 </div>
             </div>
         </header>
@@ -146,7 +167,7 @@ $conn->close();
         <div class="quick-links">
             <h3>Tautan Cepat</h3>
             <ul>
-                <li><a href="#">Pengaturan Akun</a></li>
+                <li><a href="pengaturanAdmin.php">Pengaturan Akun</a></li>
                 <li><a href="#">Ganti Kata Sandi</a></li>
                 <li><a href="#">Laporan Bulanan</a></li>
                 <li><a href="#">Panduan Pengguna</a></li>
