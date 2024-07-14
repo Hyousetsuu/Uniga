@@ -200,7 +200,7 @@ $result = $conn->query($sql);
                         <h5 class="mb-0">Input Jadwal</h5>
                     </div>
                     <div class="table-responsive">
-                        <form action="input_jadwal.php" method="POST">
+                        <form action="admin_dashboard.php" method="POST">
             <div class="mb-3">
                 <label for="dosen_id" class="form-label">Dosen</label>
                 <select class="form-select" id="dosen_id" name="dosen_id" required onchange="updateMataKuliahList()">
