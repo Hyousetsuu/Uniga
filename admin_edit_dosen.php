@@ -1,32 +1,18 @@
 <?php
+include 'config.php';
 session_start();
-if ($_SESSION['role'] != 'admin') {
+
+// Pastikan user yang login adalah admin
+if ($_SESSION['role'] !== 'admin') {
     header("Location: login.php");
     exit();
 }
-include 'config.php';
 
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $mata_kuliah = $_POST['mata_kuliah'];
-    $hari = $_POST['hari'];
-    $jam = $_POST['jam'];
-    $sks = $_POST['sks'];
-    $jurusan = $_POST['jurusan'];
-    $dosen_id = $_POST['dosen_id'];
-
-    // Hitung jam selesai berdasarkan jumlah SKS
-    $jam_selesai = date("H:i", strtotime("+".($sks * 50)." minutes", strtotime($jam)));
-
-    $sql = "INSERT INTO jadwal (mata_kuliah, hari, jam, jam_selesai, sks, jurusan, dosen_id) VALUES ('$mata_kuliah', '$hari', '$jam', '$jam_selesai', '$sks', '$jurusan', '$dosen_id')";
-
-    if ($conn->query($sql) === TRUE) {
-        echo "Jadwal berhasil ditambahkan.";
-    } else {
-        echo "Error: " . $sql . "<br>" . $conn->error;
-    }
-}
-
-$sql = "SELECT id, name FROM users WHERE role='dosen'";
+$sql = "SELECT u.id, u.username, u.name, GROUP_CONCAT(mk.nama_mata_kuliah SEPARATOR ', ') AS mata_kuliah 
+        FROM users u 
+        LEFT JOIN mata_kuliah mk ON u.id = mk.dosen_id 
+        WHERE u.role = 'dosen'
+        GROUP BY u.id";
 $result = $conn->query($sql);
 ?>
 
@@ -91,9 +77,9 @@ $result = $conn->query($sql);
                     </div>
                 </div>
                 <div class="navbar-nav w-100">
-                    <a href="admin_dashboard.php" class="nav-item nav-link active"><i class="fa fa-tachometer-alt me-2"></i>Dashboard</a>
+                    <a href="admin_dashboard.php" class="nav-item nav-link"><i class="fa fa-tachometer-alt me-2"></i>Dashboard</a>
                     <a href="admin_edit_mahasiswa.php" class="nav-item nav-link"><i class="fa fa-table me-2"></i>Mahasiswa</a>
-                    <a href="admin_edit_dosen.php" class="nav-item nav-link"><i class="fa fa-chart-bar me-2"></i>Dosen</a>
+                    <a href="admin_edit_dosen.php" class="nav-item nav-link active"><i class="fa fa-chart-bar me-2"></i>Dosen</a>
                     <a href="logout.php" class="nav-item nav-link"><i class="fa fa-chart-bar me-2"></i>Logout</a>
                 </div>
             </nav>
@@ -193,58 +179,46 @@ $result = $conn->query($sql);
             </nav>
             <!-- Navbar End -->
 
+
             <!-- Recent Sales Start -->
             <div class="container-fluid pt-4 px-4">
                 <div class="bg-secondary text-center rounded p-4">
                     <div class="d-flex align-items-center justify-content-between mb-4">
-                        <h5 class="mb-0">Input Jadwal</h5>
+                        <h6 class="mb-0">Recent Salse</h6>
+                        <a href="">Show All</a>
                     </div>
                     <div class="table-responsive">
-                        <form action="input_jadwal.php" method="POST">
-            <div class="mb-3">
-                <label for="dosen_id" class="form-label">Dosen</label>
-                <select class="form-select" id="dosen_id" name="dosen_id" required onchange="updateMataKuliahList()">
-                    <option value="">Pilih Dosen</option>
-                    <?php while($row = $result->fetch_assoc()): ?>
-                        <option value="<?= $row['id'] ?>"><?= $row['name'] ?></option>
-                    <?php endwhile; ?>
-                </select>
-            </div>
-            <div class="mb-3">
-                <label for="mata_kuliah" class="form-label">Mata Kuliah</label>
-                <select class="form-select" id="mata_kuliah" name="mata_kuliah" required>
-                    <option value="">Pilih Mata Kuliah</option>
-                </select>
-            </div>
-            <div class="mb-3">
-                <label for="hari" class="form-label">Hari</label>
-                <input type="text" class="form-control" id="hari" name="hari" required>
-            </div>
-            <div class="mb-3">
-                <label for="jam" class="form-label">Jam Mulai</label>
-                <input type="time" class="form-control" id="jam" name="jam" required>
-            </div>
-            <div class="mb-3">
-                <label for="sks" class="form-label">SKS</label>
-                <input type="number" class="form-control" id="sks" name="sks" required>
-            </div>
-            <div class="mb-3">
-                <label for="jurusan" class="form-label">Jurusan</label>
-                <select class="form-select" id="jurusan" name="jurusan" required>
-                    <option value="S1-Teknik Informatika">S1-Teknik Informatika</option>
-                    <option value="S1-Ilmu Komputer">S1-Ilmu Komputer</option>
-                    <option value="S1-Ilmu Komunikasi">S1-Ilmu Komunikasi</option>
-                    <option value="D3-Teknik Informatika">D3-Teknik Informatika</option>
-                </select>
-            </div>
-            <button type="submit" class="btn btn-primary">Submit</button>
-        </form>
+                        <table class="table text-start align-middle table-bordered table-hover mb-0">
+                            <thead>
+                                <tr class="text-white">
+                                    <th>ID</th>
+                                    <th>Username</th>
+                                    <th>Nama</th>
+                                    <th>Mata Kuliah</th>
+                                    <th>Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php while ($row = $result->fetch_assoc()) { ?>
+        <tr>
+            <td><?php echo htmlspecialchars($row['id']); ?></td>
+            <td><?php echo htmlspecialchars($row['username']); ?></td>
+            <td><?php echo htmlspecialchars($row['name']); ?></td>
+            <td><?php echo htmlspecialchars($row['mata_kuliah']); ?></td>
+            <td>
+                <a class="btn btn-sm btn-primary" href="admin.php?id=<?php echo htmlspecialchars($row['id']); ?>">Edit</a>
+                <a class="btn btn-sm btn-primary" href="hapus_dosen.php?id=<?php echo htmlspecialchars($row['id']); ?>" onclick="return confirm('Apakah Anda yakin ingin menghapus dosen ini?');">Hapus</a>
+            </td>
+        </tr>
+        <?php } ?>
+                                
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
             <!-- Recent Sales End -->
-
-
+            
             <!-- Widgets Start -->
             <div class="container-fluid pt-4 px-4">
                 <div class="row g-4">
@@ -263,7 +237,7 @@ $result = $conn->query($sql);
 
 
             <!-- Footer Start -->
-            <div class="container-fluid pt-4 px-4">
+            <div class="container-fluid pt-4 px-4" style="margin-top: 180px">
                 <div class="bg-secondary rounded-top p-4">
                     <div class="row">
                         <div class="col-12 col-sm-6 text-center text-sm-start">
@@ -272,7 +246,6 @@ $result = $conn->query($sql);
                     </div>
                 </div>
             </div>
-            <!-- Footer End -->
         </div>
         <!-- Content End -->
 
@@ -280,23 +253,6 @@ $result = $conn->query($sql);
         <!-- Back to Top -->
         <a href="#" class="btn btn-lg btn-primary btn-lg-square back-to-top"><i class="bi bi-arrow-up"></i></a>
     </div>
-
-    <script>
-    function updateMataKuliahList() {
-        const dosenSelect = document.getElementById('dosen_id');
-        const mataKuliahSelect = document.getElementById('mata_kuliah');
-        const dosenId = dosenSelect.value;
-
-        fetch(`get_mata_kuliah_by_dosen.php?dosen_id=${dosenId}`)
-            .then(response => response.json())
-            .then(data => {
-                mataKuliahSelect.innerHTML = '<option value="">Pilih Mata Kuliah</option>';
-                data.forEach(mataKuliah => {
-                    mataKuliahSelect.innerHTML += `<option value="${mataKuliah.nama_mata_kuliah}">${mataKuliah.nama_mata_kuliah}</option>`;
-                });
-            });
-    }
-    </script>
 
     <!-- JavaScript Libraries -->
     <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>

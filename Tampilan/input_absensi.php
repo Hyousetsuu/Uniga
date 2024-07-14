@@ -98,7 +98,7 @@ $jadwal_result = $conn->query($jadwal_sql);
         <div class="sidebar pe-4 pb-3">
             <nav class="navbar bg-secondary navbar-dark">
                 <a href="index.html" class="navbar-brand mx-4 mb-3">
-                    <h3 class="text-primary"><i class="fa fa-user-edit me-2"></i>UNIGA</h3>
+                    <h3 class="text-primary"><i class="fa fa-user-edit me-2"></i>SSO</h3>
                 </a>
                 <div class="d-flex align-items-center ms-4 mb-4">
                     <div class="position-relative">
@@ -277,7 +277,7 @@ $jadwal_result = $conn->query($jadwal_sql);
                 <div class="bg-secondary rounded-top p-4">
                     <div class="row">
                         <div class="col-12 col-sm-6 text-center text-sm-start">
-                            &copy; <a href="#">UNIGA, Universitas Garud</a>, All Right Reserved. 
+                            &copy; <a href="#">SSO, Universitas </a>, All Right Reserved. 
                         </div>
                     </div>
                 </div>

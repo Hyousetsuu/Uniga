@@ -1,3 +1,30 @@
+<?php
+session_start();
+if ($_SESSION['role'] !== 'admin') {
+    exit;
+}
+
+include 'config.php';
+
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['id'])) {
+    $mahasiswa_id = $_GET['id'];
+    $result = mysqli_query($conn, "SELECT mahasiswa.*, users.name FROM mahasiswa JOIN users ON mahasiswa.user_id = users.id WHERE mahasiswa.id = $mahasiswa_id");
+    $mahasiswa = mysqli_fetch_assoc($result);
+} elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $mahasiswa_id = $_POST['id'];
+    $name = $_POST['name'];
+    $jurusan = $_POST['jurusan'];
+    $user_id = $_POST['user_id'];
+
+    mysqli_query($conn, "UPDATE users SET name = '$name' WHERE id = $user_id");
+    mysqli_query($conn, "UPDATE mahasiswa SET jurusan = '$jurusan' WHERE id = $mahasiswa_id");
+
+    header('Location: admin_edit_mahasiswa.php');
+    exit;
+}
+?>
+
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -47,29 +74,26 @@
                 <div class="col-12 col-sm-8 col-md-6 col-lg-5 col-xl-4">
                     <div class="bg-secondary rounded p-4 p-sm-5 my-4 mx-3">
                         <div class="d-flex align-items-center justify-content-between mb-3">
-                            <a href="index.html" class="">
                                 <h3 class="text-primary"><i class="fa fa-user-edit me-2"></i>SSO</h3>
-                            </a>
-                            <h3>Login</h3>
+                            <h3>Edit</h3>
                         </div>
-                        <form method="POST" action="authenticate.php">
+                        <form method="POST" action="edit_mahasiswa.php">
                             <div class="form-floating mb-3">
-                                <input type="text" class="form-control" id="floatingInput" name="username" placeholder="Username" required>
-                                <label for="floatingInput">Username</label>
+                                <input type="hidden" name="id" value="<?php echo $mahasiswa['id']; ?>">
+                                <input type="hidden" name="user_id" value="<?php echo $mahasiswa['user_id']; ?>">
+                                <input class="form-control" type="text" name="name" value="<?php echo $mahasiswa['name']; ?>" required>
+                                <label for="floatingInput">Nama Mahasiswa</label>
                             </div>
                             <div class="form-floating mb-4">
-                                <input type="password" class="form-control" id="floatingPassword" name="password" placeholder="Password" required>
-                                <label for="floatingPassword">Password</label>
+                                <select class="form-select" name="jurusan" required>
+                                <option value="S1-Teknik Informatika" <?php echo $mahasiswa['jurusan'] == 'S1-Teknik Informatika' ? 'selected' : ''; ?>>S1-Teknik Informatika</option>
+                                <option value="S1-Ilmu Komputer" <?php echo $mahasiswa['jurusan'] == 'S1-Ilmu Komputer' ? 'selected' : ''; ?>>S1-Ilmu Komputer</option>
+                                <option value="S1-Ilmu Komunikasi" <?php echo $mahasiswa['jurusan'] == 'S1-Ilmu Komunikasi' ? 'selected' : ''; ?>>S1-Ilmu Komunikasi</option>
+                                <option value="D3-Teknik Informatika" <?php echo $mahasiswa['jurusan'] == 'D3-Teknik Informatika' ? 'selected' : ''; ?>>D3-Teknik Informatika</option>
+                                </select>
+                                <label for="floatingPassword">Jurusan</label>
                             </div>
-                            <div class="d-flex align-items-center justify-content-between mb-4">
-                                <div class="form-check">
-                                    <input type="checkbox" class="form-check-input" id="exampleCheck1">
-                                    <label class="form-check-label" for="exampleCheck1">Remember me</label>
-                                </div>
-                                <a href="#">Forgot Password</a>
-                            </div>
-                            <button type="submit" class="btn btn-primary py-3 w-100 mb-4">Sign In</button>
-                            <p class="text-center mb-0">Don't have an Account? <a href="registrasi.php">Sign Up</a></p>
+                            <button type="submit" class="btn btn-primary py-3 w-100 mb-4">EDIT</button>
                         </form>
                     </div>
                 </div>

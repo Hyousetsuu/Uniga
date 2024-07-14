@@ -1,3 +1,46 @@
+<?php
+include 'config.php';
+session_start();
+
+// Pastikan user yang login adalah admin
+if ($_SESSION['role'] !== 'admin') {
+    header("Location: login.php");
+    exit();
+}
+
+$id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+$sql = "SELECT u.*, GROUP_CONCAT(mk.nama_mata_kuliah SEPARATOR ', ') AS mata_kuliah 
+        FROM users u 
+        LEFT JOIN mata_kuliah mk ON u.id = mk.dosen_id 
+        WHERE u.id='$id' AND u.role='dosen'";
+$result = $conn->query($sql);
+
+if ($result->num_rows > 0) {
+    $dosen = $result->fetch_assoc();
+} else {
+    die("Dosen tidak ditemukan.");
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $name = isset($_POST['name']) ? $conn->real_escape_string($_POST['name']) : '';
+    $mata_kuliah = isset($_POST['mata_kuliah']) ? explode(', ', $conn->real_escape_string($_POST['mata_kuliah'])) : [];
+
+    $sql = "UPDATE users SET name='$name' WHERE id='$id'";
+    $conn->query($sql);
+
+    $conn->query("DELETE FROM mata_kuliah WHERE dosen_id='$id'");
+    foreach ($mata_kuliah as $mk) {
+        $mk = trim($mk);
+        if ($mk != '') {
+            $conn->query("INSERT INTO mata_kuliah (nama_mata_kuliah, dosen_id) VALUES ('$mk', '$id')");
+        }
+    }
+
+    header("Location: admin_edit_dosen.php");
+    exit();
+}
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -47,29 +90,20 @@
                 <div class="col-12 col-sm-8 col-md-6 col-lg-5 col-xl-4">
                     <div class="bg-secondary rounded p-4 p-sm-5 my-4 mx-3">
                         <div class="d-flex align-items-center justify-content-between mb-3">
-                            <a href="index.html" class="">
                                 <h3 class="text-primary"><i class="fa fa-user-edit me-2"></i>SSO</h3>
-                            </a>
-                            <h3>Login</h3>
+                            <h3>Edit</h3>
                         </div>
-                        <form method="POST" action="authenticate.php">
+                        
+                        <form method="POST">
                             <div class="form-floating mb-3">
-                                <input type="text" class="form-control" id="floatingInput" name="username" placeholder="Username" required>
-                                <label for="floatingInput">Username</label>
+                                <input class="form-control" type="text" name="name" value="<?php echo htmlspecialchars($dosen['name']); ?>" required><br>
+                                <label for="floatingInput">Nama Dosen</label>
                             </div>
                             <div class="form-floating mb-4">
-                                <input type="password" class="form-control" id="floatingPassword" name="password" placeholder="Password" required>
-                                <label for="floatingPassword">Password</label>
+                                <input class="form-control" type="text" name="mata_kuliah" value="<?php echo htmlspecialchars($dosen['mata_kuliah']); ?>" required><br>
+                                <label for="floatingPassword">Mata Kuliah</label>
                             </div>
-                            <div class="d-flex align-items-center justify-content-between mb-4">
-                                <div class="form-check">
-                                    <input type="checkbox" class="form-check-input" id="exampleCheck1">
-                                    <label class="form-check-label" for="exampleCheck1">Remember me</label>
-                                </div>
-                                <a href="#">Forgot Password</a>
-                            </div>
-                            <button type="submit" class="btn btn-primary py-3 w-100 mb-4">Sign In</button>
-                            <p class="text-center mb-0">Don't have an Account? <a href="registrasi.php">Sign Up</a></p>
+                            <button type="submit" class="btn btn-primary py-3 w-100 mb-4">EDIT</button>
                         </form>
                     </div>
                 </div>
